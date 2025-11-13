@@ -2,7 +2,7 @@
   "expo": {
     "name": "Project-3",
     "slug": "Project-3",
-    "scheme": "Project-3",
+    "scheme": "project-3",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
