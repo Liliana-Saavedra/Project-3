@@ -147,6 +147,70 @@ export default function Login() {
         }
     };
 
+    //Login via Github through supabase
+    const handleGitHubSignIn = async () => {
+        setloading(true);
+        try{
+            const redirectUri = makeRedirectUri();
+            console.log('GitHub Redirect URI:', redirectUri);
+
+            const{data, error} = await supabase.auth.signInWithOAuth({
+                provider: 'github',
+                options: {
+                    redirectTo: redirectUri,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if(error){
+                Alert.alert('Error', error.message);
+                return;
+            }
+
+            if(data?.uri){
+                const result = await WebBrowser.openAuthSessionAsync(
+                    data.url,
+                    redirectUri
+                );
+
+                console.log('GitHub WebBrowser result:', result);
+
+                if(result.type === 'success' && result.url){
+                    const hashIndex = result.url.indexOf('#');
+                    if(hashIndex !== -1){
+                        const hashParams = result.url.substring(hashIndex + 1);
+                        const urlParams = new URLSearchParams(hashParams);
+                        const accessToken = urlParams.get('access_token');
+                        const refreshToken = urlParams.get('refresh_token');
+
+                        if(accessToken && refreshToken){
+                            const {data: sessionData, error: sessionError} = await supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken,
+                            });
+
+                            if(sessionError){
+                                Alert.alert('Error', sessionError.message);
+                            }else{
+                                console.log('GitHub Session set:', sessionData.user?.email);
+                                await syncUserWithBackend(sessionData.user, 'github');
+
+                                Alert.alert('Success', `Welcome${sessionData.user?.email || sessionData.user?.user_metadata?.user_name}!`);
+                                router.replace('/(tabs)/dashboard');
+                            }
+                        }else{
+                            Alert.alert('Error', 'Failed to get authentication tokens');
+                        }
+                    }
+                }
+            }
+        } catch (error:any){
+            console.error('GitHub Sign-In Error:', error);
+            Alert.alert('Error', error.message || 'An unexpected error ocurred');
+        }finally{
+            setloading(false);
+        }
+    };
     
     } => {
     return (
