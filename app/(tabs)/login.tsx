@@ -2,11 +2,11 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityInd
 import React, {useState} from "react";
 import * as WebBrowser from 'expo-web-browser';
 import{makeRedirectUri} from 'expo-auth-session';
-imort {useRouter} from 'expo-router';
+import {useRouter} from 'expo-router';
 import {supabase} from '../../lib/supabase';
 // import React, { use, useState } from "react";
 
-cont API_URL = 'http://10.0.2.2:8080';
+const API_URL = 'http://10.0.2.2:8080';
 
 export default function Login() {
     const[email, setEmail] = useState('');
@@ -41,7 +41,7 @@ export default function Login() {
                 console.log('User already exists, fetching existing user...');
                 response = await fetch(`${API_URL}/api/users/email/${encodedURIComponent(user.email)}`);
             }
-            if(!response.ok){
+            if(response.ok){
                 const data = await response.json();
                 console.log('User synced with backend', data);
                 return data;
@@ -53,6 +53,72 @@ export default function Login() {
             console.error('Error syncing user with backend:', error);
         }
     };
+
+    const handelGoogleSignIn = async () => {
+        setloading(true);
+        try{
+            const redirectUri = makeRedirectUri();
+            console.log('Redirect URI:',redirectUri);
+
+            const {data, error} = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectUri,
+                    skipBrowserRedirect: true,
+                },
+            });
+
+            if(error){
+                Alert.alert('Error', error.message);
+                return;
+            }
+
+            if(data?.url){
+                const result = await WebBrowser.openAuthSessionAsync(
+                    data.url, 
+                    redirectUri
+                );
+
+                console.log('WebBrowser result:', result);
+
+                if(result.type === 'success' && result.url){
+                    const hashIndex = result.url.indexOf('#');
+                    if(hashIndex !== -1){
+                        const hashParams = result.url.substring(hashIndex + 1);
+                        const urlParams = new URLSearchParams(hashParams);
+                        const accessToken = urlParams.get('access_token');
+                        const refreshToken = urlParams.get('refresh_token');
+
+                        console.log('Tokens found:', {accessToken: !!accessToken, refreshToken: !!refreshToken});
+                        if (accessToken && refreshToken){
+                            const {data: sessionData, error: sessionError} = await supabase.auth.setSession({
+                                access_token: accessToken,
+                                refresh_token: refreshToken,
+                            });
+
+                            if(sessionError){
+                                Alert.alert('Error', sessionError.message);
+                            }else{
+                                console.log('Session set successfully:', sessionData.user?.email);
+                                await syncUserWithBackend(sessionData.user, 'google');
+
+                                Alert.alert('Success', `Welcome${sessionData.user?.email}!`);
+                                router.replace('/(tabs)/dashboard');
+                            }
+                        }else{
+                            Alert.alert('Error', 'Failed to get authentication tokens');
+                        }
+                    }
+                }
+            }
+        }catch (error:any){
+            console.error('Google Sign-In Error:', error);
+            Alert.alert('Error' , error.message || 'An unexpected error ocurred');
+        }finally{
+            setloading(false);
+        }
+    };
+
     } => {
     return (
         <View style={styles.container}>
