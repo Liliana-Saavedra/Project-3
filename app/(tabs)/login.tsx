@@ -39,7 +39,7 @@ export default function Login() {
 
             if(response.status === 409){
                 console.log('User already exists, fetching existing user...');
-                response = await fetch(`${API_URL}/api/users/email/${encodedURIComponent(user.email)}`);
+                response = await fetch(`${API_URL}/api/users/email/${encodeURIComponent(user.email)}`);
             }
             if(response.ok){
                 const data = await response.json();
@@ -211,8 +211,8 @@ export default function Login() {
             setloading(false);
         }
     };
-    
-    } => {
+
+    // } => {
     return (
         <View style={styles.container}>
             <View>
