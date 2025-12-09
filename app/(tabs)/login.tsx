@@ -54,6 +54,7 @@ export default function Login() {
         }
     };
 
+    //sign in with google through supabase
     const handelGoogleSignIn = async () => {
         setloading(true);
         try{
@@ -119,6 +120,34 @@ export default function Login() {
         }
     };
 
+    //Sign in with email and password
+    const handleEmailLogin = async () =>{
+        if(!email || !password){
+            Alert.alert('Error', 'Please enter both email and password');
+            return;
+        }
+
+        setloading(true);
+        try{
+            const{data,error} = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if(error){
+                Alert.alert('Error', error.message);
+            }else{
+                Alert.alert('Success', `Welcome back, ${data.user?.email}!`);
+                router.replace('/(tabs)/dashboard');
+            }
+        }catch(error:any){
+            Alert.alert('Error', error.message || 'An unexpected error ocurred');
+        }finally{
+            setloading(false);
+        }
+    };
+
+    
     } => {
     return (
         <View style={styles.container}>
