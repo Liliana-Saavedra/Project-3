@@ -1,7 +1,59 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput,  } from "react-native";
-import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator  } from "react-native";
+import React, {useState} from "react";
+import * as WebBrowser from 'expo-web-browser';
+import{makeRedirectUri} from 'expo-auth-session';
+imort {useRouter} from 'expo-router';
+import {supabase} from '../../lib/supabase';
+// import React, { use, useState } from "react";
+
+cont API_URL = 'http://10.0.2.2:8080';
 
 export default function Login() {
+    const[email, setEmail] = useState('');
+    const[password, setPassword] = useState('');
+    const[loading, setloading] = useState(false);
+    const router = useRouter();
+
+    const syncUserWithBackend = async (user: any, provider: string) =>{
+        try{
+            console.log('Syncing user with backend:', user.id, user.email);
+
+            const providerEnum = provider.toUpperCase();
+
+            const userData = {
+                email: user.email,
+                username: user.email?.split('@')[0], // Use email prefix as username
+                displayName: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
+                avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture,
+                provider: providerEnum,
+                providerId: user.id,
+            };
+
+            let response = await fetch(`${API_URL}/api/users`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userData)
+            });
+
+            if(response.status === 409){
+                console.log('User already exists, fetching existing user...');
+                response = await fetch(`${API_URL}/api/users/email/${encodedURIComponent(user.email)}`);
+            }
+            if(!response.ok){
+                const data = await response.json();
+                console.log('User synced with backend', data);
+                return data;
+            }else{
+                const errorData = await response.text();
+                console.error('Failed to sync user with backend:', errorData);
+            }
+        }catch(error){
+            console.error('Error syncing user with backend:', error);
+        }
+    };
+    } => {
     return (
         <View style={styles.container}>
             <View>
