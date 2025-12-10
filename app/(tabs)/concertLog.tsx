@@ -1,6 +1,25 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, Alert, FlatList, RefreshControl, Image, ActivityIndicator } from "react-native";
+import React, {useState, useEffect} from "react";
+import {Ionicons} from "@expo/vector-icons";
+import {createClient} from '@supabase.supabase-js';
+import * as ImagePicker from 'expo-image-picker';
 
+const supabaseUrl = 'https://mfwvfbqzpaeyztgqhhtb.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1md3ZmYnF6cGFleXp0Z3FoaHRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1NTA5NzEsImV4cCI6MjA3ODEyNjk3MX0.zlQWmN_8IDn-3AFcLjeBBtxLF8CYH4G4BqSgZspEj7Q';
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+interface Concert {
+    id: string;
+    artist: string;
+    tourName?: string;
+    venue?: string;
+    city?: string;
+    country?: string;
+    genre?: string;
+    dateTime: string;
+    notes?: string;
+    ticketUrl: string;
+}
 export default function Concerts() {
     return (
         <View style={styles.container}>
