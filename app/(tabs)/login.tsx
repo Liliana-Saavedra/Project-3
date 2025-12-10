@@ -222,28 +222,48 @@ export default function Login() {
             <View style={styles.inputContainer}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Username"
+                    placeholder="Email"
                     placeholderTextColor="#94a3b8"
+                    value = {email}
+                    onChangeText = {setEmail}
+                    keyboardType = "email-address"
+                    autoCapitalize="none"
                 />
                 <TextInput
                     style={styles.input}
                     placeholder="Password"
                     placeholderTextColor="#94a3b8"
+                    value = {password}
+                    onChangeText = {setPassword}
                     secureTextEntry
                 />
             </View>
-            <View>
-                <TouchableOpacity style={[styles.button, styles.login]}>
-                    <Text style={styles.buttonText}>Login</Text>
+            <View style = {styles.buttonContainer}>
+                <TouchableOpacity 
+                    style={[styles.button, styles.login]}
+                    onPress = {handleEmailLogin}
+                    disabled = {loading}
+                    >
+                        {loading? (<ActivityIndicator color="#fff" />) :
+                        (<Text style = {styles.buttonText}>Login</Text>) }
+                    {/* <Text style={styles.buttonText}>Login</Text> */}
                 </TouchableOpacity>
             </View>
-            <View>
-                <TouchableOpacity style={[styles.button, styles.google]}>
+            <View style = {styles.buttonContainer}>
+                <TouchableOpacity
+                    style={[styles.button, styles.google]}
+                    onPress={handelGoogleSignIn}
+                    disabled = {loading}
+                >
                     <Text style={styles.buttonText}>Sign in with Google</Text>
                 </TouchableOpacity>
             </View>
-            <View>
-                <TouchableOpacity style={[styles.button, styles.github]}>
+            <View style = {styles.buttonContainer}>
+                <TouchableOpacity 
+                    style={[styles.button, styles.github]}
+                    onPress = {handleGitHubSignIn}
+                    disabled = {loading}
+                >
                     <Text style={styles.buttonText}>Sign in with GitHub</Text>
                 </TouchableOpacity>
             </View>
@@ -289,6 +309,9 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#334155',
     },
+    buttonContainer: {
+        width: '80%',
+    },
     login: {
         backgroundColor: '#27C024',
     },
@@ -297,7 +320,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         borderRadius: 8,
         marginVertical: 10,
-        width: '80%',
+        width: '100%',
         alignItems: 'center',
     },
     buttonText: {
@@ -311,5 +334,8 @@ const styles = StyleSheet.create({
     github: {
         backgroundColor: '#A11EFF',
     },
+    disabled:{
+        opacity: 0.6,
+    }
 });
     
