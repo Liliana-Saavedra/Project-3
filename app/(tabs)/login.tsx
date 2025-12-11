@@ -1,24 +1,26 @@
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator  } from "react-native";
-import React, {useState} from "react";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from "react-native";
+import React, { useState } from "react";
 import * as WebBrowser from 'expo-web-browser';
-import{makeRedirectUri} from 'expo-auth-session';
-import {useRouter} from 'expo-router';
-import {supabase} from '../../lib/supabase';
-// import React, { use, useState } from "react";
+import { makeRedirectUri } from 'expo-auth-session';
+import { useRouter } from 'expo-router';
+import { supabase } from '../../lib/supabase';
 
-const API_URL = 'http://10.0.2.2:8080';
+// Backend API URL (use 10.0.2.2 for Android emulator to reach localhost)
+const API_URL = 'https://project-3-app-28bcd4518326.herokuapp.com';
 
 export default function Login() {
-    const[email, setEmail] = useState('');
-    const[password, setPassword] = useState('');
-    const[loading, setloading] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const syncUserWithBackend = async (user: any, provider: string) =>{
-        try{
+    // Create or sync user in backend database after OAuth login
+    const syncUserWithBackend = async (user: any, provider: string) => {
+        try {
             console.log('Syncing user with backend:', user.id, user.email);
 
-            const providerEnum = provider.toUpperCase();
+            // Map provider to backend enum format (uppercase)
+            const providerEnum = provider.toUpperCase(); // "google" -> "GOOGLE"
 
             const userData = {
                 email: user.email,
@@ -26,42 +28,48 @@ export default function Login() {
                 displayName: user.user_metadata?.full_name || user.user_metadata?.name || user.email,
                 avatarUrl: user.user_metadata?.avatar_url || user.user_metadata?.picture,
                 provider: providerEnum,
-                providerId: user.id,
+                providerId: user.id, // Supabase user ID
             };
 
+            // First, try to create the user
             let response = await fetch(`${API_URL}/api/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(userData)
+                body: JSON.stringify(userData),
             });
 
-            if(response.status === 409){
+            // If user already exists (409 CONFLICT), get existing user by email
+            if (response.status === 409) {
                 console.log('User already exists, fetching existing user...');
                 response = await fetch(`${API_URL}/api/users/email/${encodeURIComponent(user.email)}`);
             }
-            if(response.ok){
+
+            if (response.ok) {
                 const data = await response.json();
-                console.log('User synced with backend', data);
+                console.log('User synced with backend:', data);
                 return data;
-            }else{
+            } else {
                 const errorData = await response.text();
                 console.error('Failed to sync user with backend:', errorData);
             }
-        }catch(error){
+        } catch (error) {
             console.error('Error syncing user with backend:', error);
+            // Don't throw - user is still authenticated even if backend sync fails
         }
     };
 
-    //sign in with google through supabase
-    const handelGoogleSignIn = async () => {
-        setloading(true);
-        try{
+    // Sign in with Google via Supabase OAuth
+    const handleGoogleSignIn = async () => {
+        setLoading(true);
+        try {
+            // Create redirect URI for Expo (no path to avoid unmatched route)
             const redirectUri = makeRedirectUri();
-            console.log('Redirect URI:',redirectUri);
 
-            const {data, error} = await supabase.auth.signInWithOAuth({
+            console.log('Redirect URI:', redirectUri);
+
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
                     redirectTo: redirectUri,
@@ -69,92 +77,99 @@ export default function Login() {
                 },
             });
 
-            if(error){
+            if (error) {
                 Alert.alert('Error', error.message);
                 return;
             }
 
-            if(data?.url){
+            if (data?.url) {
+                // Open browser for OAuth
                 const result = await WebBrowser.openAuthSessionAsync(
-                    data.url, 
+                    data.url,
                     redirectUri
                 );
 
                 console.log('WebBrowser result:', result);
 
-                if(result.type === 'success' && result.url){
+                if (result.type === 'success' && result.url) {
+                    // Parse tokens from the URL hash (handle exp:// URLs)
                     const hashIndex = result.url.indexOf('#');
-                    if(hashIndex !== -1){
+                    if (hashIndex !== -1) {
                         const hashParams = result.url.substring(hashIndex + 1);
                         const urlParams = new URLSearchParams(hashParams);
                         const accessToken = urlParams.get('access_token');
                         const refreshToken = urlParams.get('refresh_token');
 
-                        console.log('Tokens found:', {accessToken: !!accessToken, refreshToken: !!refreshToken});
-                        if (accessToken && refreshToken){
-                            const {data: sessionData, error: sessionError} = await supabase.auth.setSession({
+                        console.log('Tokens found:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+
+                        if (accessToken && refreshToken) {
+                            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
                                 access_token: accessToken,
                                 refresh_token: refreshToken,
                             });
 
-                            if(sessionError){
+                            if (sessionError) {
                                 Alert.alert('Error', sessionError.message);
-                            }else{
+                            } else {
                                 console.log('Session set successfully:', sessionData.user?.email);
+
+                                // Sync user with backend database
                                 await syncUserWithBackend(sessionData.user, 'google');
 
-                                Alert.alert('Success', `Welcome${sessionData.user?.email}!`);
+                                Alert.alert('Success', `Welcome ${sessionData.user?.email}!`);
+                                // Navigate to dashboard after successful login
                                 router.replace('/(tabs)/dashboard');
                             }
-                        }else{
+                        } else {
                             Alert.alert('Error', 'Failed to get authentication tokens');
                         }
                     }
                 }
             }
-        }catch (error:any){
+        } catch (error: any) {
             console.error('Google Sign-In Error:', error);
-            Alert.alert('Error' , error.message || 'An unexpected error ocurred');
-        }finally{
-            setloading(false);
+            Alert.alert('Error', error.message || 'An unexpected error occurred');
+        } finally {
+            setLoading(false);
         }
     };
 
-    //Sign in with email and password
-    const handleEmailLogin = async () =>{
-        if(!email || !password){
+    // Email/Password sign in
+    const handleEmailLogin = async () => {
+        if (!email || !password) {
             Alert.alert('Error', 'Please enter both email and password');
             return;
         }
 
-        setloading(true);
-        try{
-            const{data,error} = await supabase.auth.signInWithPassword({
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
-            if(error){
+            if (error) {
                 Alert.alert('Error', error.message);
-            }else{
+            } else {
                 Alert.alert('Success', `Welcome back, ${data.user?.email}!`);
                 router.replace('/(tabs)/dashboard');
             }
-        }catch(error:any){
-            Alert.alert('Error', error.message || 'An unexpected error ocurred');
-        }finally{
-            setloading(false);
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'An unexpected error occurred');
+        } finally {
+            setLoading(false);
         }
     };
 
-    //Login via Github through supabase
+    // GitHub OAuth via Supabase
     const handleGitHubSignIn = async () => {
-        setloading(true);
-        try{
+        setLoading(true);
+        try {
             const redirectUri = makeRedirectUri();
+
             console.log('GitHub Redirect URI:', redirectUri);
 
-            const{data, error} = await supabase.auth.signInWithOAuth({
+            const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'github',
                 options: {
                     redirectTo: redirectUri,
@@ -162,12 +177,12 @@ export default function Login() {
                 },
             });
 
-            if(error){
+            if (error) {
                 Alert.alert('Error', error.message);
                 return;
             }
 
-            if(data?.uri){
+            if (data?.url) {
                 const result = await WebBrowser.openAuthSessionAsync(
                     data.url,
                     redirectUri
@@ -175,44 +190,45 @@ export default function Login() {
 
                 console.log('GitHub WebBrowser result:', result);
 
-                if(result.type === 'success' && result.url){
+                if (result.type === 'success' && result.url) {
                     const hashIndex = result.url.indexOf('#');
-                    if(hashIndex !== -1){
+                    if (hashIndex !== -1) {
                         const hashParams = result.url.substring(hashIndex + 1);
                         const urlParams = new URLSearchParams(hashParams);
                         const accessToken = urlParams.get('access_token');
                         const refreshToken = urlParams.get('refresh_token');
 
-                        if(accessToken && refreshToken){
-                            const {data: sessionData, error: sessionError} = await supabase.auth.setSession({
+                        if (accessToken && refreshToken) {
+                            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
                                 access_token: accessToken,
                                 refresh_token: refreshToken,
                             });
 
-                            if(sessionError){
+                            if (sessionError) {
                                 Alert.alert('Error', sessionError.message);
-                            }else{
-                                console.log('GitHub Session set:', sessionData.user?.email);
+                            } else {
+                                console.log('GitHub session set:', sessionData.user?.email);
+
+                                // Sync user with backend database
                                 await syncUserWithBackend(sessionData.user, 'github');
 
-                                Alert.alert('Success', `Welcome${sessionData.user?.email || sessionData.user?.user_metadata?.user_name}!`);
+                                Alert.alert('Success', `Welcome ${sessionData.user?.email || sessionData.user?.user_metadata?.user_name}!`);
                                 router.replace('/(tabs)/dashboard');
                             }
-                        }else{
+                        } else {
                             Alert.alert('Error', 'Failed to get authentication tokens');
                         }
                     }
                 }
             }
-        } catch (error:any){
+        } catch (error: any) {
             console.error('GitHub Sign-In Error:', error);
-            Alert.alert('Error', error.message || 'An unexpected error ocurred');
-        }finally{
-            setloading(false);
+            Alert.alert('Error', error.message || 'An unexpected error occurred');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // } => {
     return (
         <View style={styles.container}>
             <View>
@@ -224,45 +240,47 @@ export default function Login() {
                     style={styles.input}
                     placeholder="Email"
                     placeholderTextColor="#94a3b8"
-                    value = {email}
-                    onChangeText = {setEmail}
-                    keyboardType = "email-address"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
                     autoCapitalize="none"
                 />
                 <TextInput
                     style={styles.input}
                     placeholder="Password"
                     placeholderTextColor="#94a3b8"
-                    value = {password}
-                    onChangeText = {setPassword}
+                    value={password}
+                    onChangeText={setPassword}
                     secureTextEntry
                 />
             </View>
-            <View style = {styles.buttonContainer}>
-                <TouchableOpacity 
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
                     style={[styles.button, styles.login]}
-                    onPress = {handleEmailLogin}
-                    disabled = {loading}
-                    >
-                        {loading? (<ActivityIndicator color="#fff" />) :
-                        (<Text style = {styles.buttonText}>Login</Text>) }
-                    {/* <Text style={styles.buttonText}>Login</Text> */}
+                    onPress={handleEmailLogin}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.buttonText}>Login</Text>
+                    )}
                 </TouchableOpacity>
             </View>
-            <View style = {styles.buttonContainer}>
+            <View style={styles.buttonContainer}>
                 <TouchableOpacity
                     style={[styles.button, styles.google]}
-                    onPress={handelGoogleSignIn}
-                    disabled = {loading}
+                    onPress={handleGoogleSignIn}
+                    disabled={loading}
                 >
                     <Text style={styles.buttonText}>Sign in with Google</Text>
                 </TouchableOpacity>
             </View>
-            <View style = {styles.buttonContainer}>
-                <TouchableOpacity 
+            <View style={styles.buttonContainer}>
+                <TouchableOpacity
                     style={[styles.button, styles.github]}
-                    onPress = {handleGitHubSignIn}
-                    disabled = {loading}
+                    onPress={handleGitHubSignIn}
+                    disabled={loading}
                 >
                     <Text style={styles.buttonText}>Sign in with GitHub</Text>
                 </TouchableOpacity>
@@ -334,8 +352,7 @@ const styles = StyleSheet.create({
     github: {
         backgroundColor: '#A11EFF',
     },
-    disabled:{
+    disabled: {
         opacity: 0.6,
-    }
+    },
 });
-    

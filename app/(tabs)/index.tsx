@@ -1,35 +1,38 @@
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
-import React from "react";
+import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Home() {
+    const router = useRouter();
+    const { isAuthenticated, isLoading } = useAuth();
+
+    useEffect(() => {
+        if (!isLoading) {
+            if (isAuthenticated) {
+                // Redirect to My Concerts when authenticated
+                router.replace('/(tabs)/userConcerts');
+            } else {
+                // Redirect to login when not authenticated
+                router.replace('/(tabs)/login');
+            }
+        }
+    }, [isAuthenticated, isLoading]);
+
+    // Show loading while redirecting
     return (
         <View style={styles.container}>
-            <View style={styles.section}>
-                <Text style={styles.header}>Welcome Back 🎶</Text>
-                <Text style={styles.subtext}>Ready to log your next concert?</Text>
-            </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
-            </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Quick Actions</Text>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Log a Concert</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Upload Setlist</Text>
-                </TouchableOpacity>
-            </View>
-         </View>
+            <ActivityIndicator size="large" color="#0EA3FF" />
+        </View>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#00123C',
-        padding: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     section: {
         marginBottom: 30,
