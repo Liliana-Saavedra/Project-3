@@ -240,16 +240,20 @@ const styles = StyleSheet.create({
     header: {
         padding: 20,
         paddingBottom: 10,
+        textAlign: 'center',
     },
     headerTitle: {
         fontSize: 28,
         fontWeight: 'bold',
         color: '#0EA3FF',
+        textAlign: 'center',
     },
     headerSubtitle: {
         fontSize: 14,
         color: '#94a3b8',
         marginTop: 4,
+        fontWeight: "600",
+        textAlign: 'center',
     },
     listContent: {
         padding: 16,

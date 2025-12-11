@@ -44,18 +44,7 @@ export default function Profile() {
                 </Text>
                 <Text style={styles.userEmail}>{user?.email}</Text>
             </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Shared Memories</Text>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>View Concert Highlights</Text>
-                </TouchableOpacity>
-            </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Friend Sync</Text>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Connect with Friends</Text>
-                </TouchableOpacity>
-            </View>
+
             <View style={[styles.section, styles.sectionWithBorder]}>
                 <Text style={styles.sectionTitle}>Logout</Text>
                 <TouchableOpacity style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
@@ -84,16 +73,18 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: '#0EA3FF',
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     subtext: {
         fontSize: 18,
         color: '#cbd5e1',
         marginTop: 4,
         fontWeight: "600",
+        textAlign: 'center',
     },
     sectionTitle: {
         fontSize: 20,
-        color: '#A11EFF',
+        color: '#FF44AE',
         fontWeight: '600',
         marginBottom: 10,
     },
@@ -110,7 +101,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     signOutButton: {
-        backgroundColor: '#dc2626',
+        backgroundColor: '#0EA3FF',
     },
     avatar: {
         width: 80,
