@@ -1,7 +1,30 @@
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Image } from "react-native";
 import React from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useRouter } from "expo-router";
 
 export default function Profile() {
+    const { user, signOut } = useAuth();
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        Alert.alert(
+            "Sign Out",
+            "Are you sure you want to sign out?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Sign Out",
+                    style: "destructive",
+                    onPress: async () => {
+                        await signOut();
+                        router.replace("/(tabs)/login");
+                    },
+                },
+            ]
+        );
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.section}>
@@ -10,9 +33,16 @@ export default function Profile() {
             </View>
             <View style={[styles.section, styles.sectionWithBorder]}>
                 <Text style={styles.sectionTitle}>User Info</Text>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>View Profile Details</Text>
-                </TouchableOpacity>
+                {user?.user_metadata?.avatar_url && (
+                    <Image
+                        source={{ uri: user.user_metadata.avatar_url }}
+                        style={styles.avatar}
+                    />
+                )}
+                <Text style={styles.userInfo}>
+                    {user?.user_metadata?.full_name || user?.user_metadata?.name || 'User'}
+                </Text>
+                <Text style={styles.userEmail}>{user?.email}</Text>
             </View>
             <View style={[styles.section, styles.sectionWithBorder]}>
                 <Text style={styles.sectionTitle}>Shared Memories</Text>
@@ -28,7 +58,7 @@ export default function Profile() {
             </View>
             <View style={[styles.section, styles.sectionWithBorder]}>
                 <Text style={styles.sectionTitle}>Logout</Text>
-                <TouchableOpacity style={styles.button}>
+                <TouchableOpacity style={[styles.button, styles.signOutButton]} onPress={handleSignOut}>
                     <Text style={styles.buttonText}>Sign Out</Text>
                 </TouchableOpacity>
             </View>
@@ -78,5 +108,24 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '500',
+    },
+    signOutButton: {
+        backgroundColor: '#dc2626',
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        marginBottom: 12,
+    },
+    userInfo: {
+        fontSize: 18,
+        color: '#fff',
+        fontWeight: '600',
+    },
+    userEmail: {
+        fontSize: 14,
+        color: '#94a3b8',
+        marginTop: 4,
     },
 });
