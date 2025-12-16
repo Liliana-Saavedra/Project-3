@@ -42,7 +42,7 @@ export default function TabLayout() {
                     backgroundColor: "#00123C",
                 },
                 headerTitleAlign: "center",
-                headerTitleStyle: { color: "#ffffff" },
+                headerTitleStyle: { color: "#00123C" },
                 tabBarStyle: {
                     backgroundColor: "#00123C",
                 },

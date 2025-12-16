@@ -380,52 +380,6 @@ export default function Concerts() {
                     <Text style={styles.buttonText}>Create Concert Log</Text>
                 </TouchableOpacity>
             </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Upload Photos</Text>
-                <TouchableOpacity
-                    style={[styles.button, isUploading && styles.buttonDisabled]}
-                    onPress={pickAndUploadImage}
-                    disabled={isUploading}
-                >
-                    {isUploading ? (
-                        <View style={styles.uploadingContainer}>
-                            <ActivityIndicator size="small" color="#fff" />
-                            <Text style={[styles.buttonText, { marginLeft: 8 }]}>Uploading...</Text>
-                        </View>
-                    ) : (
-                        <Text style={styles.buttonText}>Add Concert Photo</Text>
-                    )}
-                </TouchableOpacity>
-
-                {/* Uploaded Images Preview */}
-                {uploadedImages.length > 0 && (
-                    <View style={styles.imagesContainer}>
-                        <Text style={styles.imagesLabel}>Uploaded Photos ({uploadedImages.length})</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imagesScroll}>
-                            {uploadedImages.map((imageUrl, index) => (
-                                <View key={index} style={styles.imageWrapper}>
-                                    <Image source={{ uri: imageUrl }} style={styles.uploadedImage} />
-                                    <TouchableOpacity
-                                        style={styles.removeImageButton}
-                                        onPress={() => {
-                                            setUploadedImages(prev => prev.filter((_, i) => i !== index));
-                                        }}
-                                    >
-                                        <Ionicons name="close-circle" size={24} color="#ef4444" />
-                                    </TouchableOpacity>
-                                </View>
-                            ))}
-                        </ScrollView>
-                    </View>
-                )}
-            </View>
-            <View style={[styles.section, styles.sectionWithBorder]}>
-                <Text style={styles.sectionTitle}>Personal Notes</Text>
-                <Text style={styles.subtext}>Add reflections, memories, or thoughts from each concert</Text>
-                <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Write a Note</Text>
-                </TouchableOpacity>
-            </View>
 
             {/* Create Concert Log Modal */}
             <Modal
@@ -701,18 +655,21 @@ const styles = StyleSheet.create({
         fontSize: 28,
         color: '#0EA3FF',
         fontWeight: 'bold',
+        textAlign: 'center',
     },
     subtext: {
         fontSize: 18,
         color: '#cbd5e1',
         marginTop: 4,
         fontWeight: "600",
+        textAlign: 'center',
     },
     sectionTitle: {
         fontSize: 20,
         color: '#A11EFF',
         fontWeight: '600',
         marginBottom: 10,
+        alignItems: 'center',
     },
     buttonText: {
         color: '#fff',
@@ -720,14 +677,14 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     button: {
-        backgroundColor: '#27C024',
+        backgroundColor: '#0EA3FF',
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderRadius: 8,
         marginTop: 8,
     },
     createButton: {
-        backgroundColor: '#27C024',
+        backgroundColor: '#0EA3FF',
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 8,
